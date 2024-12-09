@@ -25,7 +25,7 @@ def health_check():
   return {"Server Working"}
 
 # 처음 올릴 경우 - 가능한 시간대 + unique_url 리턴하면 됨.
-@app.post("/uploadfile/")
+@app.post("/uploadfile")
 async def create_meet(file: UploadFile = File(...), username: str=''):
     # 유저의 시간표 read
     image = convertImgFormat.load_image_into_numpy_array(await file.read())
@@ -40,7 +40,7 @@ async def create_meet(file: UploadFile = File(...), username: str=''):
     return {"user_name": username, "output": output, "unique_url": unique_url}
 
 # unique id로 get 요청 - 해당 url에 속하는 사람들의 교집합 return
-@app.post("/meet/")
+@app.post("/meet")
 async def add_timetable(id: str='',file: UploadFile = File(...), username: str=''):
   # 존재하는 url인지부터 확인
   meets = await databaseModule.filter_meet(id)
@@ -65,7 +65,7 @@ async def add_timetable(id: str='',file: UploadFile = File(...), username: str='
     return {"meets": res}
 
 # unique id로 get 요청 - 해당 url에 속하는 사람들의 교집합 return
-@app.get("/meet/")
+@app.get("/meet")
 async def filter_timetable(id: str=''):
   # 겹치는 meet 가져오기
   meets = await databaseModule.filter_meet(id)
