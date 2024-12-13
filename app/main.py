@@ -96,7 +96,7 @@ async def filter_timetable(id: str = ''):
     # return res
     return {"meets": res, "participants": participants, "absent": minimum}
 
-@app.post("/save-code")
+@app.post("/entrance-codes")
 async def save_code(entrance_code: str, user_id: int):
     username = str(user_id)
 
