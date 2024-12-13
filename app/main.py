@@ -3,7 +3,7 @@ import requests
 import uvicorn
 import numpy as np
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from io import BytesIO
 from PIL import Image
@@ -20,7 +20,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.get("/")
 def health_check():
@@ -45,7 +44,7 @@ async def create_meet(file_url: str, username: str = ''):
         timetable = exportImg.export_img(image_array)
 
         # 유저의 시간표 db에 저장
-        unique_url = databaseModule.savedb(username, json.dumps(timetable, ensure_ascii=False))
+        unique_url = databaseModule.save_db_test(username, json.dumps(timetable, ensure_ascii=False))
 
         # 가능한 시간 찾기 함수
         output = management.first_person(timetable)
@@ -97,6 +96,23 @@ async def filter_timetable(id: str = ''):
     # return res
     return {"meets": res, "participants": participants, "absent": minimum}
 
+@app.post("/save-code")
+async def save_code(entrance_code: str, user_id: int):
+    username = str(user_id)
+
+    # username으로 매칭되는 Notion 페이지를 검색
+    page_id = databaseModule.find_page_by_username(username)
+
+    if not page_id:
+        raise HTTPException(status_code=404, detail="Page not found for the user")
+
+    # Notion 페이지에 entranceCode 저장
+    success = databaseModule.update_page_with_code(page_id, entrance_code)
+
+    if success:
+        return {"entrance_code": entrance_code, "user_id": username}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save the entrance code.")
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", reload=True)
