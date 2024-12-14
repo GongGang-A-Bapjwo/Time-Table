@@ -82,7 +82,7 @@ async def add_timetable(id: str = '', file: UploadFile = File(...), username: st
 
 
 # unique id로 get 요청 - 해당 url에 속하는 사람들의 교집합 return
-@app.get("/meet")
+@app.get("/meeting")
 async def filter_timetable(entrance_code: str = ''):
     # 입력값 검증
     if not entrance_code:
@@ -103,23 +103,23 @@ async def filter_timetable(entrance_code: str = ''):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-@app.post("/entrance-codes")
-async def save_code(entrance_code: str, user_id: int):
-    username = str(user_id)
-
-    # username으로 매칭되는 Notion 페이지를 검색
-    page_id = databaseModule.find_page_by_username(username)
-
-    if not page_id:
-        raise HTTPException(status_code=404, detail="Page not found for the user")
-
-    # Notion 페이지에 entranceCode 저장
-    success = databaseModule.update_page_with_code(page_id, entrance_code)
-
-    if success:
-        return {"entrance_code": entrance_code, "user_id": username}
-    else:
-        raise HTTPException(status_code=500, detail="Failed to save the entrance code.")
+# @app.post("/entrance-codes")
+# async def save_code(entrance_code: str, user_id: int):
+#     username = str(user_id)
+#
+#     # username으로 매칭되는 Notion 페이지를 검색
+#     page_id = databaseModule.find_page_by_username(username)
+#
+#     if not page_id:
+#         raise HTTPException(status_code=404, detail="Page not found for the user")
+#
+#     # Notion 페이지에 entranceCode 저장
+#     success = databaseModule.update_page_with_code(page_id, entrance_code)
+#
+#     if success:
+#         return {"entrance_code": entrance_code, "user_id": username}
+#     else:
+#         raise HTTPException(status_code=500, detail="Failed to save the entrance code.")
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", reload=True)
