@@ -83,18 +83,25 @@ async def add_timetable(id: str = '', file: UploadFile = File(...), username: st
 
 # unique id로 get 요청 - 해당 url에 속하는 사람들의 교집합 return
 @app.get("/meet")
-async def filter_timetable(id: str = ''):
-    # 겹치는 meet 가져오기
-    meets = await databaseModule.filter_meet(id)
+async def filter_timetable(entrance_code: str = ''):
+    # 입력값 검증
+    if not entrance_code:
+        raise HTTPException(status_code=400, detail="Entrance code is required.")
 
-    # 겹치는 시간대 전부 표시하는 알고리즘
     try:
-        res, participants, minimum = management.filter_table(meets)
-    except:
-        return {"error": "해당하는 url이 존재하지 않습니다."}
+        # 겹치는 meet 가져오기
+        meets = await databaseModule.filter_meet(entrance_code)
 
-    # return res
-    return {"meets": res, "participants": participants, "absent": minimum}
+        # 겹치는 시간대 전부 표시하는 알고리즘
+        res, participants, minimum = management.filter_table(meets)
+
+        return {"meets": res, "participants": participants, "absent": minimum}
+
+    except KeyError:
+        raise HTTPException(status_code=404, detail="해당하는 URL이 존재하지 않습니다.")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 @app.post("/entrance-codes")
 async def save_code(entrance_code: str, user_id: int):
