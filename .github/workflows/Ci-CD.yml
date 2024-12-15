@@ -50,8 +50,8 @@ jobs:
         uses: appleboy/ssh-action@master
         with:
           host: ${{secrets.HOST}}
-          username: ubuntu
-          key: ${{secrets.KEY}}
+          username: ${{secrets.USERNAME}}
+          password: ${{secrets.PASSWORD}}
           script: |
             sudo docker pull ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
             
