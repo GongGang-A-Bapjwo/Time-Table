@@ -10,8 +10,13 @@ from PIL import Image
 
 # custom module
 import exportImg, convertImgFormat, databaseModule, management
+from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()
+
+# Prometheus 메트릭 노출 설정
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app, "/metrics")  # '/metrics' 엔드포인트에서 메트릭 노출
 
 app.add_middleware(
     CORSMiddleware,
