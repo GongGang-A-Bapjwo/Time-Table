@@ -1,0 +1,71 @@
+name: Deploy to Oracle Cloud VM
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Docker Image Build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: false
+          tags: ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
+
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_ACCESS_TOKEN}}
+
+      - name: Docker Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          dockerfile: Dockerfile
+          push: true
+          tags: ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
+
+      - name: SSH to Oracle Cloud VM and Deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.HOST}}
+          username: ubuntu
+          key: ${{secrets.KEY}}
+          script: |
+            sudo docker pull ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
+            
+            EXISTING_CONTAINER_ID=$(sudo docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=running")
+            if [ ! -z "$EXISTING_CONTAINER_ID" ]; then
+              sudo docker stop $EXISTING_CONTAINER_ID
+              sudo docker rm $EXISTING_CONTAINER_ID
+            fi
+
+            EXISTING_CONTAINER_ID=$(sudo docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=exited")
+            if [ ! -z "$EXISTING_CONTAINER_ID" ]; then
+              sudo docker rm $EXISTING_CONTAINER_ID
+            fi
+            
+            sudo docker rm $(sudo docker ps --filter 'status=exited' -a -q) 
+            docker run -d --env-file .env -p ${{secrets.SERVICE_PORT}}:80 ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest uvicorn app.main:app --host 0.0.0.0 --port 80
+            sudo docker image prune -a -f
