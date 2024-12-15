@@ -53,19 +53,19 @@ jobs:
           username: ${{secrets.USERNAME}}
           password: ${{secrets.PASSWORD}}
           script: |
-            sudo docker pull ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
+            docker pull ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest
             
-            EXISTING_CONTAINER_ID=$(sudo docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=running")
+            EXISTING_CONTAINER_ID=$(docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=running")
             if [ ! -z "$EXISTING_CONTAINER_ID" ]; then
-              sudo docker stop $EXISTING_CONTAINER_ID
-              sudo docker rm $EXISTING_CONTAINER_ID
+              docker stop $EXISTING_CONTAINER_ID
+              docker rm $EXISTING_CONTAINER_ID
             fi
 
-            EXISTING_CONTAINER_ID=$(sudo docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=exited")
+            EXISTING_CONTAINER_ID=$(docker ps -q -f "publish=${{secrets.SERVICE_PORT}}" -f "status=exited")
             if [ ! -z "$EXISTING_CONTAINER_ID" ]; then
-              sudo docker rm $EXISTING_CONTAINER_ID
+              docker rm $EXISTING_CONTAINER_ID
             fi
             
-            sudo docker rm $(sudo docker ps --filter 'status=exited' -a -q) 
+            docker rm $(docker ps --filter 'status=exited' -a -q) 
             docker run -d --env-file .env -p ${{secrets.SERVICE_PORT}}:80 ${{secrets.DOCKER_USERNAME}}/gonggangtimetable:latest uvicorn app.main:app --host 0.0.0.0 --port 80
-            sudo docker image prune -a -f
+            docker image prune -a -f
